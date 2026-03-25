@@ -1,0 +1,56 @@
+name: Docker Build and Publish
+
+# PRs run a safety build only; pushes/tags publish to GHCR.
+on:
+  pull_request: {}
+  push:
+    branches: ["main", "master"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          # Generate branch/PR/SHA tags plus semver tags from v* releases.
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ github.ref_name }}
+            type=semver,pattern={{major}},value=${{ github.ref_name }}
+            type=sha
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and (optionally) push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          # Do not push images for PR events.
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
