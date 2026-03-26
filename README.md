@@ -81,11 +81,20 @@ Run interactively with env vars:
 docker run --rm -it --env-file .env advanced-agent:local
 ```
 
+## Run Tests
+
+Install dev dependencies and run tests:
+
+```bash
+uv sync --dev
+uv run pytest -q
+```
+
 ## Publish with GitHub Actions (GHCR)
 
 This repo includes [.github/workflows/docker.yml](.github/workflows/docker.yml).
 
-- On pull requests: builds image only (no push)
+- On pull requests: runs tests, then builds image only (no push)
 - On `main`/`master` push: builds and pushes to GHCR
 - On version tag push (for example `v1.2.3`): publishes semver tags (`1.2.3`, `1.2`, `1`)
 - On manual trigger: builds and pushes
