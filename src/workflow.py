@@ -181,5 +181,8 @@ class Workflow:
 
     def run(self, query: str) -> ResearchState:
         # Run the graph for one query and return fully materialized state.
-        final_state = self.graph.invoke(ResearchState(query=query))
+        final_state = self.graph.invoke(
+            ResearchState(query=query),
+            config={"run_name": f"research: {query}"},
+        )
         return ResearchState(**final_state)
