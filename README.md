@@ -61,10 +61,11 @@ The workflow is also exposed as an MCP tool (`research_dev_tools`) via `server.p
 {
   "mcpServers": {
     "dev-tools-researcher": {
-      "command": "uv",
-      "args": ["run", "research-mcp-server"],
+      "command": "uvx",
+      "args": ["--from", "advanced-agent", "research-mcp-server"],
       "env": {
-        "FIRECRAWL_API_KEY": "<your-key>"
+        "FIRECRAWL_API_KEY": "<your-key>",
+        "OLLAMA_BASE_URL": "http://localhost:11434"
       }
     }
   }
@@ -74,7 +75,7 @@ The workflow is also exposed as an MCP tool (`research_dev_tools`) via `server.p
 Or run directly:
 
 ```bash
-uv run research-mcp-server
+uvx --from advanced-agent research-mcp-server
 ```
 
 ## Project Structure
