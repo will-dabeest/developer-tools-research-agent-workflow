@@ -4,12 +4,6 @@ CLI agent for researching developer tools using Firecrawl + LangGraph + Ollama.
 
 It takes a user query (for example, `vector databases`), finds relevant tools, scrapes key pages, runs structured analysis, and prints concise recommendations.
 
-## Workflow Badges
-
-Replace `OWNER/REPO` with your GitHub repository path:
-
-[![Docker Build and Publish](https://github.com/OWNER/REPO/actions/workflows/docker.yml/badge.svg)](https://github.com/OWNER/REPO/actions/workflows/docker.yml)
-
 ## Requirements
 
 - Python `>=3.11,<3.14`
