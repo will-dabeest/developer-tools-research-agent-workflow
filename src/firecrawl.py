@@ -31,9 +31,12 @@ class FirecrawlMCPService:
             async with ClientSession(read, write) as session:
                 await session.initialize()
                 result = await session.call_tool(tool_name, arguments)
-        # Firecrawl MCP tools always return a single TextContent block containing JSON.
-        if result.content and hasattr(result.content[0], "text"):
-            return json.loads(result.content[0].text)
+        # Only extract text from content blocks that have a 'text' attribute
+        if result.content:
+            for block in result.content:
+                text = getattr(block, "text", None)
+                if text is not None:
+                    return json.loads(text)
         return None
 
     def search(self, query: str, num_results: int = 5) -> Any:

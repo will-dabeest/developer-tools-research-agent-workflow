@@ -113,7 +113,15 @@ class Workflow:
             HumanMessage(content=self.prompts.tool_analysis_user(company_name, content)),
         ]
         try:
-            return structured_llm.invoke(messages)
+            result = structured_llm.invoke(messages)
+            if isinstance(result, CompanyAnalysis):
+                return result
+            elif isinstance(result, dict):
+                return CompanyAnalysis(**result)
+            elif hasattr(result, 'model_dump'):
+                return CompanyAnalysis(**result.model_dump())
+            else:
+                raise ValueError("Unexpected result type from LLM")
         except Exception as exc:
             print(f"Error analyzing {company_name}: {exc}")
             return CompanyAnalysis(pricing_model="Unknown", description="Failed to analyze.")
