@@ -6,7 +6,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langgraph.graph import END, StateGraph
 
-from .firecrawl import FirecrawlService
+from .firecrawl import FirecrawlMCPService
 from .models import CompanyAnalysis, CompanyInfo, ResearchState
 from .prompts import DeveloperToolsPrompts
 
@@ -57,7 +57,7 @@ def _apply_analysis(company: CompanyInfo, analysis: CompanyAnalysis) -> None:
 class Workflow:
     def __init__(self) -> None:
         # Initialize external services and compile the graph once.
-        self.firecrawl = FirecrawlService()
+        self.firecrawl = FirecrawlMCPService()
         self.llm = ChatOllama(
             model=_OLLAMA_MODEL,
             temperature=0.1,
