@@ -1,13 +1,14 @@
 # Advanced Agent
 
-CLI agent for researching developer tools using Firecrawl + LangGraph + Ollama.
+CLI agent and MCP server for researching developer tools using Firecrawl + LangGraph + Ollama.
 
-It takes a user query (for example, `vector databases`), finds relevant tools, scrapes key pages, runs structured analysis, and prints concise recommendations.
+It takes a user query (for example, `vector databases`), finds relevant tools, scrapes key pages, runs structured analysis, and prints concise recommendations. It can run as a standalone CLI or be exposed as an MCP tool for use with Claude and other MCP clients.
 
 ## Requirements
 
 - Python `>=3.11,<3.14`
 - `uv` installed
+- Node.js and `npx` (used to run the Firecrawl MCP server)
 - Firecrawl API key
 - Ollama running locally
 
@@ -28,7 +29,6 @@ cp .env.example .env
 3. Set required values in `.env`:
 
 - `FIRECRAWL_API_KEY` (required)
-- `LLM_PROVIDER=ollama`
 - `OLLAMA_MODEL` and `OLLAMA_BASE_URL` (defaults are usually fine)
 
 4. Start Ollama and ensure the model exists:
@@ -53,11 +53,36 @@ Type your query at the prompt. Use `exit` or `quit` to stop.
 3. Analyze results into structured fields (pricing, OSS, APIs, integrations)
 4. Generate a short recommendation summary
 
+## Run as MCP Server
+
+The workflow is also exposed as an MCP tool (`research_dev_tools`) via `server.py`. To use it with Claude Desktop or another MCP client, add this to your MCP client config:
+
+```json
+{
+  "mcpServers": {
+    "dev-tools-researcher": {
+      "command": "uv",
+      "args": ["run", "research-mcp-server"],
+      "env": {
+        "FIRECRAWL_API_KEY": "<your-key>"
+      }
+    }
+  }
+}
+```
+
+Or run directly:
+
+```bash
+uv run research-mcp-server
+```
+
 ## Project Structure
 
 - `main.py` — CLI loop and output formatting
+- `server.py` — MCP server exposing the workflow as a `research_dev_tools` tool
 - `src/workflow.py` — LangGraph workflow orchestration
-- `src/firecrawl.py` — Firecrawl wrapper (search/scrape)
+- `src/firecrawl.py` — Firecrawl MCP client (search/scrape via `npx firecrawl-mcp`)
 - `src/models.py` — Pydantic state/result models
 - `src/prompts.py` — Prompt templates
 
@@ -120,6 +145,9 @@ docker run --rm -it \
 
 - **`FIRECRAWL_API_KEY is required...`**
   - Add a valid key to `.env`.
+
+- **`npx: command not found` or Firecrawl MCP errors**
+  - Install Node.js (which includes `npx`). The Firecrawl MCP server is launched automatically via `npx firecrawl-mcp`.
 
 - **Ollama connection/model errors**
   - Start Ollama (`ollama serve`) and pull the configured model.
