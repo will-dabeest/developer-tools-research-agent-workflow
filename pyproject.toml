@@ -10,7 +10,7 @@ include = ["server.py", "src"]
 
 [project]
 name = "advanced-agent"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server and CLI for researching developer tools using Firecrawl, LangGraph, and Ollama"
 readme = "README.md"
 license = {text = "MIT"}
