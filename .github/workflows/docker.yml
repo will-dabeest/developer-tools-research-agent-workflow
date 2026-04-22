@@ -13,6 +13,7 @@ permissions:
   packages: write
 
 jobs:
+
   test:
     runs-on: ubuntu-latest
     steps:
@@ -30,8 +31,24 @@ jobs:
       - name: Install dependencies (with dev)
         run: uv sync --frozen --dev
 
-      - name: Run tests
-        run: uv run pytest -q
+      - name: Install coverage
+        run: uv pip install coverage
+
+      - name: Run tests with coverage
+        run: uv run coverage run -m pytest
+
+      - name: Report coverage
+        run: uv run coverage report
+
+      - name: Upload coverage report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: htmlcov
+        if: always()
+
+      - name: Generate HTML coverage report
+        run: uv run coverage html
 
   docker:
     needs: test
