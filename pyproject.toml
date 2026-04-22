@@ -13,6 +13,9 @@ dependencies = [
     "python-dotenv>=1.2.2",
 ]
 
+[project.scripts]
+research-mcp-server = "server:main"
+
 [dependency-groups]
 dev = [
     "pytest>=8.3.5,<9.0.0",
