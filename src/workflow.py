@@ -1,4 +1,5 @@
 import os
+import sys
 from collections.abc import Mapping
 from typing import Any
 
@@ -6,7 +7,7 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_ollama import ChatOllama
 from langgraph.graph import END, StateGraph
 
-from .firecrawl import FirecrawlService
+from .firecrawl import FirecrawlMCPService
 from .models import CompanyAnalysis, CompanyInfo, ResearchState
 from .prompts import DeveloperToolsPrompts
 
@@ -57,7 +58,7 @@ def _apply_analysis(company: CompanyInfo, analysis: CompanyAnalysis) -> None:
 class Workflow:
     def __init__(self) -> None:
         # Initialize external services and compile the graph once.
-        self.firecrawl = FirecrawlService()
+        self.firecrawl = FirecrawlMCPService()
         self.llm = ChatOllama(
             model=_OLLAMA_MODEL,
             temperature=0.1,
@@ -80,7 +81,7 @@ class Workflow:
 
     def _extract_tools_step(self, state: ResearchState) -> dict[str, Any]:
         # Gather source content, then ask the LLM to extract tool names.
-        print(f"Finding articles about: {state.query}")
+        print(f"Finding articles about: {state.query}", file=sys.stderr)
         article_query = f"{state.query} tools comparison best alternatives"
         results = _normalize_search_results(self.firecrawl.search(article_query, num_results=3))
 
@@ -99,10 +100,10 @@ class Workflow:
         try:
             response = self.llm.invoke(messages)
             tool_names = [line.strip() for line in str(response.content).strip().split("\n") if line.strip()]
-            print(f"Extracted tools: {', '.join(tool_names[:5])}")
+            print(f"Extracted tools: {', '.join(tool_names[:5])}", file=sys.stderr)
             return {"extracted_tools": tool_names}
         except Exception as exc:
-            print(f"Error during tool extraction: {exc}")
+            print(f"Error during tool extraction: {exc}", file=sys.stderr)
             return {"extracted_tools": []}
         
     def _analyze_company_content(self, company_name: str, content: str) -> CompanyAnalysis:
@@ -113,9 +114,17 @@ class Workflow:
             HumanMessage(content=self.prompts.tool_analysis_user(company_name, content)),
         ]
         try:
-            return structured_llm.invoke(messages)
+            result = structured_llm.invoke(messages)
+            if isinstance(result, CompanyAnalysis):
+                return result
+            elif isinstance(result, dict):
+                return CompanyAnalysis(**result)
+            elif hasattr(result, 'model_dump'):
+                return CompanyAnalysis(**result.model_dump())
+            else:
+                raise ValueError("Unexpected result type from LLM")
         except Exception as exc:
-            print(f"Error analyzing {company_name}: {exc}")
+            print(f"Error analyzing {company_name}: {exc}", file=sys.stderr)
             return CompanyAnalysis(pricing_model="Unknown", description="Failed to analyze.")
         
     def _research_step(self, state: ResearchState) -> dict[str, Any]:
@@ -124,14 +133,14 @@ class Workflow:
 
         if not tool_names:
             # Fall back so the workflow still returns useful output when extraction underperforms.
-            print("No tools extracted, falling back to direct search.")
+            print("No tools extracted, falling back to direct search.", file=sys.stderr)
             items = _normalize_search_results(self.firecrawl.search(state.query, num_results=MAX_TOOLS))
             tool_names = [
                 item.get("metadata", {}).get("title") or item.get("title") or "Unknown"
                 for item in items
             ]
 
-        print(f"Researching tools: {', '.join(tool_names)}")
+        print(f"Researching tools: {', '.join(tool_names)}", file=sys.stderr)
 
         companies: list[CompanyInfo] = []
         for tool_name in tool_names:
@@ -161,7 +170,7 @@ class Workflow:
     
     def _analyze_step(self, state: ResearchState) -> dict[str, Any]:
         # Generate a concise final recommendation over all researched companies.
-        print("Generating final recommendations...")
+        print("Generating final recommendations...", file=sys.stderr)
         company_data = ", ".join(c.model_dump_json() for c in state.companies)
         messages = [
             SystemMessage(content=self.prompts.RECOMMENDATIONS_SYSTEM),
