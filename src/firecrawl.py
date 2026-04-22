@@ -1,6 +1,7 @@
 import json
 import os
 import asyncio
+import sys
 from typing import Any
 
 from mcp import ClientSession, StdioServerParameters
@@ -57,7 +58,7 @@ class FirecrawlMCPService:
                 return response.get("data", [])
             return response or []
         except Exception as exc:
-            print(f"Error during search: {exc}")
+            print(f"Error during search: {exc}", file=sys.stderr)
             return []
 
     def scrape_url(self, url: str) -> Any:
@@ -67,5 +68,5 @@ class FirecrawlMCPService:
                 self._call_tool("firecrawl_scrape", {"url": url, "formats": ["markdown"]})
             )
         except Exception as exc:
-            print(f"Error during scrape: {exc}")
+            print(f"Error during scrape: {exc}", file=sys.stderr)
             return None

@@ -1,3 +1,4 @@
+import sys
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
@@ -53,9 +54,14 @@ def research_dev_tools(query: str) -> str:
     Returns:
         A structured text report comparing the top tools found, with a final recommendation.
     """
-    workflow = Workflow()
-    state = workflow.run(query)
-    return _format_results(state)
+    # Guard against any library writing to stdout, which would corrupt the stdio MCP stream.
+    sys.stdout = sys.stderr
+    try:
+        workflow = Workflow()
+        state = workflow.run(query)
+        return _format_results(state)
+    finally:
+        sys.stdout = sys.__stdout__
 
 
 def main() -> None:
